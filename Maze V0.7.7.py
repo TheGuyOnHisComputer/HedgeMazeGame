@@ -18,9 +18,9 @@ x=0
 y=0
 
 #Amount of heges in level 1
-nofhedges = 0
+nofhedges = 50
 
-
+lvl = 0
 FPS = 15
 WINDOWWIDTH = 800
 WINDOWHEIGHT = 600
@@ -60,7 +60,7 @@ def main():
     wn = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
     BASICFONT = pygame.font.SysFont('ActionIsShaded', 24)
     pygame.display.set_caption('Hedge Maze')
-    print("Pre-show start screen: success")
+##    print("Pre-show start screen: success")
     showStartScreen()
     runGame()
 
@@ -68,8 +68,8 @@ def runGame():
     print("Key Pressed")
     clearScreen()
     levelStartScreen()
-    time.sleep(7)
-    loadlevel(nofhedges)
+    time.sleep(5)
+    loadlevel(nofhedges, lvl)
 
 
 def showStartScreen():
@@ -78,7 +78,7 @@ def showStartScreen():
     instFont = pygame.font.SysFont('ActionIsShaded', 20)
     titleSurf1 = titleFont.render('Hedge Maze', True, WHITE, RED)
     degrees1 = 0
-    print("Pre-loop show start screen: success")
+##    print("Pre-loop show start screen: success")
     while True:
         wn.fill(BGCOLOR)
         rotatedSurf1 = pygame.transform.rotate(titleSurf1, degrees1)
@@ -91,14 +91,14 @@ def showStartScreen():
             return
         pygame.display.update()
         degrees1 += 1
-        print("End of showstartscreen loop: success")
+##        print("End of showstartscreen loop: success")
         time.sleep(0.02)
 
 def levelStartScreen():
-    levelNameSurf1 = titleFont.render('Level Start', True, RED, WHITE)
+    levelNameSurf1 = titleFont.render('Loading', True, RED, BLACK)
     levelNameRect1 = levelNameSurf1.get_rect()
     levelNameRect1.center = (WINDOWWIDTH / 2, WINDOWHEIGHT * 0.25)
-    levelDescr = instFont.render('Use the arrow keys to navigate your way to the golden square(watch out for the hedges)!', True, BLUE, WHITE)
+    levelDescr = instFont.render('Use the arrow keys to navigate your way to the golden square(watch out for the hedges)!', True, BLUE, BLACK)
     levelDescrRect = levelDescr.get_rect()
     levelDescrRect.center = (WINDOWWIDTH/2, WINDOWHEIGHT*0.75)
     wn.blit(levelDescr, levelDescrRect)
@@ -110,6 +110,14 @@ def drawPressKeyMsg():
     pressKeyRect = pressKeySurf.get_rect()
     pressKeyRect.topleft = (WINDOWWIDTH - 200, WINDOWHEIGHT - 30)
     wn.blit(pressKeySurf, pressKeyRect)
+
+def endScreen():
+    scoreMessage = titleFont.render('Score: '+ str((time.clock()-15)), True, BLUE, BLACK)
+    scoreMessageRect = scoreMessage.get_rect()
+    wn.blit(scoreMessage, scoreMessageRect)
+    pygame.display.update()
+    time.sleep(3)
+    terminate()
 
 def terminate():
     pygame.quit()
@@ -212,12 +220,15 @@ class goalTexture:
 
 #Level Create
 
-def loadlevel(nofhedges):
+def loadlevel(nofhedges, lvl):
     CurrentTime = 0
     count = 0
     hedges = 0
     global hedge1, hedgecoords, goalCoords, goal1
     clearScreen()
+#Level Check - Ie. If they still have another turn.
+    if lvl == 5:
+        endScreen()
     drawGrid()
     player1 = playerTexture()
     player1.loadplayer(x, y)
@@ -239,22 +250,6 @@ def loadlevel(nofhedges):
         hedges+=1
         count +=1
 
-#Fill Path Texture
-##    for i in range(0, ((WINDOWHEIGHT/CELLSIZE) * (WINDOWWIDTH/CELLSIZE))):
-##        pathx = 20
-##        pathy = 20
-##        pathCoords = (pathx, pathy)
-##        path1 = pathTexture()
-##        path1.loadTexture("hey", pathCoords)
-##        while pathy<WINDOWHEIGHT:
-##            while pathx<WINDOWWIDTH:
-##                pathCoords = (pathx, pathy)
-##                path1 = pathTexture()
-##                path1.loadTexture("hola", pathCoords)
-##                pathx+=20
-##                if pathx==WINDOWWIDTH-CELLSIZE:
-##                    pathx = 0
-##                    pathy +=20
 #Goal Comes Last
 
     while goals<1:
@@ -264,84 +259,64 @@ def loadlevel(nofhedges):
         goalCoords.insert(0, goal1.coords)
     CurrentTime = time.clock()
     while True:
-        direction(x, y, nofhedges)
+        direction(x, y, nofhedges, lvl)
 
-def direction(x, y, nofhedges):
+def direction(x, y, nofhedges, lvl):
     direction = RIGHT
     while True: # main game loop
         for event in pygame.event.get():
             if event.type == QUIT:
                 terminate()
+
             elif event.type == KEYDOWN:
                 if (event.key == K_LEFT or event.key == K_a):
                     direction = LEFT
 ##                    print("Left")
-                    if (x,y) in goalCoords:
-                        print(WINMESSAGE + "You took " + str(time.clock())+" seconds.")
-                        time.sleep(3)
-                        nofhedges=nofhedges+50
-                        loadlevel(nofhedges)
-                    elif (x,y) in hedgecoords:
-                        print(COLLISIONMESSAGE)
-                        time.sleep(2)
-                        loadlevel(nofhedges)
-
-                    elif x>CELLSIZE-1:
-                        x-=CELLSIZE
-                    else:
-                        print("Out of play")
+                    checkPosition(x, y, nofhedges, lvl)
+                    if x>CELLSIZE-1:
+                        x-= CELLSIZE
                 elif (event.key == K_RIGHT or event.key == K_d):
                     direction = RIGHT
 ##                    print("Right")
-                    if (x,y) in goalCoords:
-                        print(WINMESSAGE + "You took" + str(time.clock())+"Seconds.")
-                        time.sleep(3)
-                        loadlevel(nofhedges)
-                    elif (x,y) in hedgecoords:
-                        print(COLLISIONMESSAGE)
-                        time.sleep(2)
-                        loadlevel(nofhedges)
-                    elif x<(WINDOWWIDTH-(2*CELLSIZE))+1:
+                    checkPosition(x, y ,nofhedges, lvl)
+                    if x<(WINDOWWIDTH-(2*CELLSIZE))+1:
                         x+=CELLSIZE
-                    else:
-                        print("Out of play")
                 elif (event.key == K_UP or event.key == K_w):
                     direction = UP
 ##                    print("Up")
-                    if (x,y) in goalCoords:
-                        print(WINMESSAGE + "You took" + str(time.clock())+"Seconds.")
-                        time.sleep(3)
-                        nofhedges=nofhedges+50
-                        loadlevel(nofhedges)
-                    elif (x,y) in hedgecoords:
-                        print(COLLISIONMESSAGE)
-                        time.sleep(2)
-                        loadlevel()
-                    elif y>CELLSIZE-1:
+                    checkPosition(x, y ,nofhedges, lvl)
+                    if y>CELLSIZE-1:
                         y-=CELLSIZE
-                    else:
-                        print("Out of play")
                 elif (event.key == K_DOWN or event.key == K_s):
-##                    print("Down")
                     direction = DOWN
-                    if (x,y) in goalCoords:
-                        print(WINMESSAGE + "You took" + str(time.clock())+"Seconds.")
-                        time.sleep(3)
-                        nofhedges=nofhedges+50
-                        loadlevel(nofhedges)
-                    elif (x,y) in hedgecoords:
-                        print(COLLISIONMESSAGE)
-                        time.sleep(2)
-                        loadlevel(nofhedges)
-
-                    elif y<561:
-                        y=y+CELLSIZE
-                    else:
-                        print("Out of play")
+##                    print("Down")
+                    checkPosition(x, y ,nofhedges, lvl)
+                    if y<(WINDOWHEIGHT-(2*CELLSIZE))+1:
+                        y+=CELLSIZE
                 elif event.key == K_ESCAPE:
                     terminate()
 
         player1 = playerTexture()
         player1.loadplayer(x, y)
+
+def finishLevel(nofhedges, lvl):
+##    print(WINMESSAGE + "You took " + str(time.clock())+" seconds.")
+    time.sleep(3)
+    nofhedges=nofhedges+50
+    lvl += 1
+    loadlevel(nofhedges, lvl)
+
+def failLevel(nofhedges, lvl):
+    print(COLLISIONMESSAGE)
+    time.sleep(2)
+    loadlevel(nofhedges, lvl)
+
+def checkPosition(x, y, nofhedges, lvl):
+    if (x,y) in goalCoords:
+        finishLevel(nofhedges, lvl)
+    elif (x,y) in hedgecoords:
+        failLevel(nofhedges, lvl)
+    elif x>CELLSIZE-1:
+        x-=CELLSIZE
 
 main()
